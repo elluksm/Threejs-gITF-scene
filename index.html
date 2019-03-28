@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GlTF</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%
+        }
+    </style>
+</head>
+
+<body>
+    <script src="three.min.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script src="GLTFLoader.js"></script>
+
+    <script>
+
+        const module = {
+            frame: 0, cube: null, camera: null, renderer: null, scene: null, controls: null,
+
+            init() {
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+                this.controls = new THREE.OrbitControls(this.camera);
+                this.loader = new THREE.GLTFLoader();
+
+                this.camera.position.set(-14, 10, 10);
+                this.controls.update();
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setClearColor(new THREE.Color(0xEEEEEE));
+                this.renderer.shadowMap.enabled = true;
+
+                document.body.appendChild(this.renderer.domElement);
+
+                this.createWorld();
+                this.setupEvents();
+                this.animate();
+
+            },
+
+            setupEvents() {
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                })
+            },
+
+            createWorld() {
+                this.createObjects();
+                this.createLights();
+            },
+            createObjects() {
+
+                //add ground plane
+                var plane = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({
+                    color: 0x0F0FF,
+                    metalness: 0,
+                    side: THREE.DoubleSide
+                }));
+
+                plane.rotation.x = Math.PI / 2;
+                plane.position.y = 0;
+                plane.position.x = 15;
+                this.scene.add(plane);
+
+                //add models
+                this.loader.load('./models/dancer/model.gltf', (gltf) => {
+                    gltf.scene.scale.set(25, 25, 25);
+                    gltf.scene.position.set(10, -22.5, 1);
+                    this.dancer = gltf.scene;
+                    this.scene.add(gltf.scene);
+                });
+
+                this.loader.load('./models/flowerpot/model.gltf', (gltf) => {
+                    gltf.scene.scale.set(3, 3, 3);
+                    gltf.scene.position.set(18, -1.3, -6);
+                    this.flowerpot = gltf.scene;
+                    this.scene.add(gltf.scene);
+                });
+
+                this.loader.load('./models/jerry/JERRY.PSDout.gltf', (gltf) => {
+                    gltf.scene.scale.set(0.5, 0.5, 0.5);
+                    gltf.scene.position.set(20, 0, 12);
+                    this.jerry = gltf.scene;
+                    this.jerry.rotation.y = 4.5;
+                    this.scene.add(gltf.scene);
+                });
+
+                this.loader.load('./models/sofa/model.gltf', (gltf) => {
+                    gltf.scene.scale.set(10, 10, 10);
+                    gltf.scene.position.set(25, -6, 1);
+                    this.sofa = gltf.scene;
+                    this.sofa.rotation.y = 5;
+                    this.scene.add(gltf.scene);
+                });
+
+            },
+
+            createLights() {
+                var light = new THREE.AmbientLight(0x404040); // soft white light
+                this.scene.add(light);
+            },
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                module.controls.update();
+                module.renderer.render(module.scene, module.camera);
+            }
+        };
+
+
+        module.init();
+
+    </script>
+</body>
+
+</html>
