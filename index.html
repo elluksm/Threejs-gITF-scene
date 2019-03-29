@@ -20,32 +20,34 @@
     <script src="three.min.js"></script>
     <script src="OrbitControls.js"></script>
     <script src="GLTFLoader.js"></script>
+    <script src="DragControls.js"></script>
 
     <script>
 
         const module = {
             frame: 0, cube: null, camera: null, renderer: null, scene: null, controls: null,
+            objects: [], times: [], fps: 0,
 
             init() {
                 this.scene = new THREE.Scene();
                 this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-                this.controls = new THREE.OrbitControls(this.camera);
                 this.loader = new THREE.GLTFLoader();
 
-                this.camera.position.set(-14, 10, 10);
-                this.controls.update();
+                this.camera.position.set(10, 8, 25);
 
                 this.renderer = new THREE.WebGLRenderer({ antialias: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setClearColor(new THREE.Color(0xEEEEEE));
                 this.renderer.shadowMap.enabled = true;
+                this.controls = new THREE.DragControls(this.objects, this.camera, this.renderer.domElement);
 
                 document.body.appendChild(this.renderer.domElement);
 
                 this.createWorld();
                 this.setupEvents();
-                this.animate();
 
+                this.animate();
+                this.refreshLoop();
             },
 
             setupEvents() {
@@ -77,9 +79,10 @@
                 //add models
                 this.loader.load('./models/dancer/model.gltf', (gltf) => {
                     gltf.scene.scale.set(25, 25, 25);
-                    gltf.scene.position.set(10, -22.5, 1);
+                    gltf.scene.position.set(10, -22.5, 10);
                     this.dancer = gltf.scene;
                     this.scene.add(gltf.scene);
+                    this.objects.push(gltf.scene);
                 });
 
                 this.loader.load('./models/flowerpot/model.gltf', (gltf) => {
@@ -87,14 +90,16 @@
                     gltf.scene.position.set(18, -1.3, -6);
                     this.flowerpot = gltf.scene;
                     this.scene.add(gltf.scene);
+                    this.objects.push(this.flowerpot);
                 });
 
                 this.loader.load('./models/jerry/JERRY.PSDout.gltf', (gltf) => {
                     gltf.scene.scale.set(0.5, 0.5, 0.5);
                     gltf.scene.position.set(20, 0, 12);
                     this.jerry = gltf.scene;
-                    this.jerry.rotation.y = 4.5;
+                    this.jerry.rotation.y = 5;
                     this.scene.add(gltf.scene);
+                    this.objects.push(this.jerry);
                 });
 
                 this.loader.load('./models/sofa/model.gltf', (gltf) => {
@@ -103,8 +108,29 @@
                     this.sofa = gltf.scene;
                     this.sofa.rotation.y = 5;
                     this.scene.add(gltf.scene);
+                    this.objects.push(this.sofa);
                 });
 
+                //add spheres for DragControls
+                var geometry = new THREE.SphereGeometry(2, 40, 40);
+
+                var sphere = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
+                sphere.position.x = 4;
+                sphere.position.y = 2;
+                sphere.position.z = -1;
+                this.scene.add(sphere);
+                this.objects.push(sphere);
+
+                var sphere2 = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
+                sphere2.position.x = 15;
+                sphere2.position.y = 2;
+                sphere2.position.z = 7;
+                this.scene.add(sphere2);
+                this.objects.push(sphere2);
+
+                //measure distance
+                var distance = sphere.position.distanceTo(sphere2.position);
+                console.log("Sākotnējais attālums starp bumbām: " + distance);
             },
 
             createLights() {
@@ -114,10 +140,23 @@
 
             animate() {
                 requestAnimationFrame(() => this.animate());
-                module.controls.update();
                 module.renderer.render(module.scene, module.camera);
-            }
-        };
+            },
+
+            //  Frames per second counter
+            refreshLoop() {
+                window.requestAnimationFrame(() => {
+                    const now = performance.now();
+                    while (this.times.length > 0 && this.times[0] <= now - 1000) {
+                        this.times.shift();
+                    }
+                    this.times.push(now);
+                    this.fps = this.times.length;
+                    console.log(this.fps);
+                    this.refreshLoop();
+                });
+            },
+        }
 
 
         module.init();
